@@ -1,23 +1,50 @@
 import { Fragment } from 'react';
-import { useRouter } from 'next/router';
-import { getEventById } from '../../dummy-data';
-import EventSummay from '../../components/event-detail/EventSummary';
+import { getEventById, getAllEvents, getFeaturedEvents } from '../../helpers/api-utils';
+import EventSummary from '../../components/event-detail/EventSummary';
 import EventLogistics from '../../components/event-detail/EventLogistics';
 import EventContent from '../../components/event-detail/EventContent';
-function EventDetailPage() {
-    const router = useRouter();
-    const eventId = router.query.eventId;
-    const event = getEventById(eventId);
-    if (!event) {
+
+function EventDetailPage(props) {
+    // const router = useRouter();
+    // const eventId = router.query.eventId;
+    // const event = getEventById(eventId);
+
+    if (!props.event) {
         return <p>No event find</p>
     }
+
     return <Fragment>
-        <EventSummay title={event.title}></EventSummay>
-        <EventLogistics date={event.date} address={event.location} image={event.image} imageAlt={event.title}>
-            <p>{event.description}</p>
-        </EventLogistics>
-        <EventContent></EventContent>
+        <EventSummary title={props.event.title} />
+        <EventLogistics date={props.event.date} address={props.event.location} image={props.event.image} imageAlt={props.event.title} />
+        <EventContent>
+            <p>{props.event.description}</p>
+        </EventContent>
     </Fragment>
+
 }
+
+
+export async function getStaticProps(context) {
+    const eventId = context.params.eventId;
+    const event = await getEventById(eventId);
+
+    return {
+        props: {
+            event: event
+        },
+        revalidate: 1800
+    }
+}
+
+export async function getStaticPaths() {
+    const events = await getFeaturedEvents();
+    const paths = events.map(event => ({ params: { eventId: event.id } }));
+
+    return {
+        paths: paths,
+        fallback: true
+    };
+}
+
 
 export default EventDetailPage;
